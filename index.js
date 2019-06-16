@@ -6,21 +6,21 @@ let players =  [];
 let statistics =  [];
 let result =  [];
 
-fs.createReadStream('Players.csv')  
+fs.createReadStream('players.csv')  
   .pipe(csv())
   .on('data', (row) => {
     players.push({...row});
   })
   .on('end', () => {
-    console.log('CSV file Players.csv successfully processed');
+    console.log('CSV file players.csv successfully processed');
 
-    fs.createReadStream('Seasons_Stats.csv')  
+    fs.createReadStream('statistics.csv')  
     .pipe(csv())
     .on('data', (row) => {
         statistics.push({...row});
     })
     .on('end', () => {
-      console.log('CSV file Seasons_Stats.csv successfully processed');
+      console.log('CSV file statistics.csv successfully processed');
       players.forEach(elem => {
         const static = statistics.filter(s =>Number(s.Year) >=  2000).find(static => static.Player === elem.Player);
         if(static){
