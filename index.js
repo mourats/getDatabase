@@ -24,10 +24,10 @@ fs.createReadStream('players_v2.csv')
       players.forEach(elem => {
         const static = statistics.find(static => static.Player.split('\\')[0] === elem.Name);
         if(static){
+          statistics = statistics.filter(elem => elem !== static);
           const validKeys = Object.keys(static).filter(elem => !!static[elem]);
           if(validKeys.length === Object.keys(static).length){
             delete static.Player;
-            statistics = statistics.filter(elem => elem !== static);
             const obj = {...elem, ...static};
             result.push(obj);
           }
