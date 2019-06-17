@@ -1,54 +1,66 @@
-const csv = require('csv-parser');  
-const fs = require('fs');
-const createCsvWriter = require('csv-writer').createObjectCsvWriter;
+const csv = require("csv-parser");
+const fs = require("fs");
+const createCsvWriter = require("csv-writer").createObjectCsvWriter;
 
-let players =  [];
-let statistics =  [];
-let result =  [];
+const crawler = require("crawler-request");
+const async = require("async");
 
-fs.createReadStream('Players.csv')  
+let statistics = [];
+const cursor = "cm,";
+
+fs.createReadStream("statistics_v2.csv")
   .pipe(csv())
-  .on('data', (row) => {
-    players.push({...row});
+  .on("data", row => {
+    statistics.push({ ...row });
   })
-  .on('end', () => {
-    console.log('CSV file Players.csv successfully processed');
+  .on("end", () => {
+    console.log("CSV file statistics_v2.csv successfully processed");
 
-    fs.createReadStream('Seasons_Stats.csv')  
-    .pipe(csv())
-    .on('data', (row) => {
-        statistics.push({...row});
-    })
-    .on('end', () => {
-      console.log('CSV file Seasons_Stats.csv successfully processed');
-      players.forEach(elem => {
-        const static = statistics.filter(s =>Number(s.Year) >=  2000).find(static => static.Player === elem.Player);
-        if(static){
-            let obj = {nome: elem.Player, altura : elem.height, peso: elem.weight, livre: static['FT%'], goals: static['FG%']};
-            result.push(obj);
-        }
-      });
-      console.log(result);
-      writeCSV(result);
-    });
+    async.eachLimit(
+      statistics.filter((elem, idx) => idx < 5),
+      10,
+      getDataLink,
+      err => {
+        if (err) throw err;
+
+        //console.log(statistics);
+        writeCSV(statistics);
+      }
+    );
   });
 
+const getUrl = string => {
+  return `https://www.basketball-reference.com/players/a/${
+    string.Player.split("\\")[1]
+  }.html`;
+};
 
+const getDataLink = (object, callback) => {
+  crawler(getUrl(object)).then(function(response) {
+    if (response.text !== null) {
+      setHeightAndWeight(response.text, object);
+    }
+    callback();
+  });
+};
 
-  const  writeCSV = (data) => {
-    const csvWriter = createCsvWriter({  
-      path: 'result.csv',
-      header: [
-        {id: 'name', title: 'name'},
-        {id: 'altura', title: 'altura'},
-        {id: 'peso', title: 'peso'},
-        {id: 'livre', title: 'livre'},
-        {id: 'goals', title: 'goals'},
-      ]
-    });
+const setHeightAndWeight = (text, object) => {
+  const beginHeight = text.indexOf('cm,');
+  const beginWeight = beginHeight + cursor.length;
 
-    csvWriter  
+  console.log(text.slice(beginHeight - 3, beginHeight + 8));
+};
+
+const writeCSV = data => {
+  const csvWriter = createCsvWriter({
+    path: "result.csv", 
+    header: Object.keys(data[0]).reduce((accum = [], elem) => {
+      accum.push({ id: elem, title: elem });
+      return accum;
+    }, [])
+  });
+
+  csvWriter
     .writeRecords(data)
-    .then(()=> console.log('The CSV file was written successfully'));
-  }
-
+    .then(() => console.log("The CSV file was written successfully"));
+};
