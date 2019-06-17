@@ -56,16 +56,17 @@ const getDataLink = (object, callback) => {
 };
 
 const setHeightAndWeight = (text, object) => {
-  object.Name = object.Player.split("\\")[0];
+  let newObj = {};
+  newObj.Name = object.Player.split("\\")[0];
   delete object.Player;
 
   const height = text.match(/([0-9])+(cm)/)[0];
-  object.height = height.substring(0, height.length - 2);
+  newObj.Height = height.substring(0, height.length - 2);
 
   const weight = text.match(/([0-9])+(kg)/)[0];
-  object.weight = weight.substring(0, weight.length - 2);
-
-  result.push(object);
+  newObj.Weight = weight.substring(0, weight.length - 2);
+  
+  result.push({...newObj, ...object});
 };
 
 const writeCSV = data => {
